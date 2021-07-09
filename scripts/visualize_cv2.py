@@ -7,15 +7,10 @@ from Mask_RCNN.mrcnn import utils
 from Mask_RCNN.mrcnn import model as modellib
 from Mask_RCNN.mrcnn.config import Config
 
+
 ROOT_DIR = os.path.abspath("/home/dylan/catkin_ws/src/stream_to_cv/src/Mask_RCNN/")
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
-sys.path.append(os.path.join(ROOT_DIR,"samples/coco/"))
-from Mask_RCNN.samples.coco import coco
-
-COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-if not os.path.exists(COCO_MODEL_PATH):
-    utils.download_trained_weights(COCO_MODEL_PATH)
-
+COCO_MODEL_PATH = os.path.join(ROOT_DIR, "model_weights/mask_rcnn_drone.h5")
 
 class InferenceConfig(Config):
     
