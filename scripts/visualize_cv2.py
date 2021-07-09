@@ -8,7 +8,7 @@ from Mask_RCNN.mrcnn import model as modellib
 from Mask_RCNN.mrcnn.config import Config
 
 
-ROOT_DIR = os.path.abspath("/home/dylan/catkin_ws/src/stream_to_cv/src/Mask_RCNN/")
+ROOT_DIR = os.path.abspath("/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/")
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "model_weights/mask_rcnn_drone.h5")
 
