@@ -80,6 +80,7 @@ def display_instances(image, boxes, masks, ids, names, scores):
         take the image and results and apply the mask, box, and Label
     """
     n_instances = boxes.shape[0]
+    print(f"shape: {n_instances} boxes: {boxes}")
 
     if not n_instances:
         print('NO INSTANCES TO DISPLAY')
