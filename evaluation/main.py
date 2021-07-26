@@ -27,9 +27,9 @@ print(device_lib.list_local_devices())
 # bboxCFList is a list of numpy arrays in the same order as bboxResults
 
 # Format your bbox and confidence level results (if needed) and append them in these variables
-real_test_dir = '/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/datasets/droneDetection/real_test/image_10m/'
-export_path = "/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/exports/results.xlsx"
-labelFilePath = "/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/datasets/droneDetection/real_test/label.json"
+real_test_dir = '/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/datasets/droneDetection/real_test/image_30m/'
+export_path = "/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/exports/results_30m.xlsx"
+labelFilePath = "/home/dylan/catkin_ws/src/mask_rcnn_ros/src/Mask_RCNN/datasets/droneDetection/real_test/label_30m.json"
 
 image_paths = []
 for filename in sorted(os.listdir(real_test_dir)):
@@ -47,12 +47,12 @@ for image_path in image_paths:
     r = results[0]
     bboxCFList.append(r['scores'])
     bboxResults[image_path.replace(real_test_dir, "")] = r['rois'].tolist()
-    # viz.display_instances(img, r['rois'], r['masks'], r['class_ids'], 
-    #                         class_names, r['scores'], figsize=(15,15))
+    viz.display_instances(img, r['rois'], r['masks'], r['class_ids'], 
+                            class_names, r['scores'], figsize=(15,15))
     
-# print(f"{image_paths}\n")
+print(f"{image_paths}\n")
 print(f"{bboxResults}\n")
-# print(f"{bboxCFList}\n")
+print(f"{bboxCFList}\n")
 
 # First convert dictionary of lists into a dataframe, with the image name as index
 df = pd.DataFrame.from_dict(bboxResults,orient='index', columns=['BBox Array'])
