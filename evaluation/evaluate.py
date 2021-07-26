@@ -9,9 +9,9 @@ from openpyxl.styles import Font, Color, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 
 
-def set_header():
+def set_header(outputFile):
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
     
     ws['A1'] = 'File Name'
@@ -80,60 +80,61 @@ def set_header():
     
     
     # Update excel sheet
-    wb.save(filename=r'exports/results.xlsx')
+    wb.save(filename=outputFile)
 
-def calculate_false_positives(dict):
-    
+
+def calculate_false_positives(outputFile, dict):
+
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
-    
+
     rowNum = 2      # First entry is at row number 2
     fPosCount = 0
-    
-    # Tolerance for numpy.allclose()
-    # Can be changed, but I find that this tolerance works best so far
-    rtol = 0.20
-    atol = 0.50
-    
-    
+
+    # Pixel tolerance for false positive
+    # If any of the values in the array exceeds +- ptol, flagged as false positive
+    ptol = 100
+
+
     # Iterate through each np array and check for false positives
     for key in dict:
-        
+
         # If there are more than 1, automatically false positive detected
-        if dict[key].size > 4:
+        if len(dict[key]) > 4:
             ws.cell(row=rowNum, column=4, value='False Positive').font = Font(color='FF8C00', bold=True)
             fPosCount += 1
-            
+
         # If there are only 1 object, compare it with ground truth value
         # First access the cell, then convert the string into numpy array
-        elif dict[key].size == 4:
+        elif len(dict[key]) == 4:
             gtString = ws.cell(row=rowNum, column=16).value
             gtString = gtString.replace('[', '')
             gtString = gtString.replace(']', '')
 
             gtArray = np.fromstring(gtString, dtype=int, sep=' ')
-            accurate = np.allclose(gtArray, dict[key], rtol, atol)
-            # print(gtArray, dict[key], accurate)
-        
+
+            # false indicates false positive (1 or more values exceeded tolerance)
+            accurate = compareArrays(gtArray, dict[key][0].astype(float), ptol)
+
+
             if not accurate:
                 ws.cell(row=rowNum, column=4, value='False Positive').font = Font(color='FF8C00', bold=True)
                 fPosCount += 1
-        
+
         rowNum += 1
-        
-    
+
+
     # Update excel sheet
     ws['G5'] = fPosCount
-    wb.save(filename=r'exports/results.xlsx')
-    
+    wb.save(filename=outputFile)
+
     return fPosCount
 
-
-def calculate_false_negatives(dict):
+def calculate_false_negatives(outputFile, dict):
     
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
     
     
@@ -144,35 +145,35 @@ def calculate_false_negatives(dict):
     for key in dict:
         gtCell = ws.cell(row=rowNum, column=16).value
         # print(gtCell)
-        if dict[key].size == 0 and gtCell != '[]':
+        if len(dict[key]) == 0 and gtCell != '[]':
             ws.cell(row=rowNum, column=4, value='False Negative').font = Font(color='FF0000', bold=True)
             fNegCount += 1
         rowNum += 1
     
     # Update excel sheet
     ws['G6'] = fNegCount
-    wb.save(filename=r'exports/results.xlsx')
+    wb.save(filename=outputFile)
     
     return fNegCount
 
-def calculate_total_images(dict):
+def calculate_total_images(outputFile, dict):
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
     
     # Update excel sheet
     ws['G4'] = len(dict)
-    wb.save(filename=r'exports/results.xlsx')
+    wb.save(filename=outputFile)
     
     return len(dict)
 
-def calculate_passing_rate():
+def calculate_passing_rate(outputFile, dict):
 
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
     
-    imageSize = calculate_total_images(bboxResults)
+    imageSize = calculate_total_images(outputFile, dict)
     passCount = 0
     
     for i in range(2, imageSize+2): # First entry is at row 2
@@ -187,16 +188,16 @@ def calculate_passing_rate():
     
     # Update excel sheet
     ws['G8'] = passing_rate
-    wb.save(filename=r'exports/results.xlsx')
+    wb.save(filename=outputFile)
     
     return passing_rate
 
-def calculate_avg_cf():
+def calculate_avg_cf(outputFile, dict):
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
     
-    imageSize = calculate_total_images(bboxResults)
+    imageSize = calculate_total_images(outputFile, dict)
     passCount = 0
     cfList = []
     
@@ -213,14 +214,14 @@ def calculate_avg_cf():
     
     # Update excel sheet
     ws['G7'] = avg_cf
-    wb.save(filename=r'exports/results.xlsx')
+    wb.save(filename=outputFile)
     
     #return avg_cf
 
-def clean_excel():
+def clean_excel(outputFile):
     
     # Load excel sheet for manipulation
-    wb = load_workbook(filename=r'exports/results.xlsx')
+    wb = load_workbook(filename=outputFile)
     ws = wb.active
     
     # Adjust column width
@@ -233,6 +234,55 @@ def clean_excel():
         ws.column_dimensions[col].width = value + 2
         
     # Update excel sheet
-    wb.save(filename=r'exports/results.xlsx')
+    wb.save(filename=outputFile)
     
     return
+
+
+def transfer_bbox(outputFile, labelFilePath):
+    # Load excel sheet for manipulation
+    wb = load_workbook(filename=outputFile)
+    ws = wb.active
+
+    rowNum = 2  # First entry is at row number 2
+
+    # Load json file
+    with open(labelFilePath) as lf:
+        lfData = json.load(lf)
+
+    # Transfer bounding box values row by row
+    for image in lfData["annotations"]:
+
+        # Ground Truth bounding box list is in different format than mask RCNN rois
+        gtList = [round(num) for num in image["bbox"]]
+
+        # Reformats the list following mask RCNN rois for easier comparison
+        if (len(gtList) == 4):
+            reformattedList = [gtList[1], gtList[0], gtList[1]+gtList[3], gtList[0]+gtList[2]]
+
+            # Check for negative numbers and bump them up to 0
+            for i in range(len(reformattedList)):
+                if reformattedList[i] < 0:
+                    reformattedList[i] = 0
+
+            # Afterwards convert to numpy array
+            npArray = np.asarray(reformattedList)
+
+        ws.cell(row=rowNum, column=16, value=str(npArray))
+        rowNum += 1
+
+    # Update excel sheet
+    wb.save(filename=outputFile)
+
+    return
+
+
+def compareArrays(array1, array2, ptol):
+    index = 0
+    for i in array1:
+        if (array1[index] - array2[index]) > ptol:
+            return False
+        elif (array2[index] - array1[index]) > ptol:
+            return False
+        index += 1
+    return True
