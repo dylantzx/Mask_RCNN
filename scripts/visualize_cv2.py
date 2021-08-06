@@ -80,7 +80,6 @@ def display_instances(image, boxes, masks, ids, names, scores):
         take the image and results and apply the mask, box, and Label
     """
     n_instances = boxes.shape[0]
-    print(f"shape: {n_instances} boxes: {boxes}")
 
     if not n_instances:
         print('NO INSTANCES TO DISPLAY')
@@ -96,9 +95,9 @@ def display_instances(image, boxes, masks, ids, names, scores):
         color = class_dict[label]
         score = scores[i] if scores is not None else None
         caption = '{} {:.2f}'.format(label, score) if score else label
-        mask = masks[:, :, i]
+        # mask = masks[:, :, i]
 
-        image = apply_mask(image, mask, color)
+        # image = apply_mask(image, mask, color)
         image = cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
         image = cv2.putText(
             image, caption, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 0.7, color, 2
